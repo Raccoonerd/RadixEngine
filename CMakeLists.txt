@@ -9,6 +9,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(SOURCES 
   src/main.cpp
   src/DictionaryLoader.cpp
+  src/RadixTree.cpp
 )
 
 add_executable(${PROJECT_NAME} ${SOURCES})
