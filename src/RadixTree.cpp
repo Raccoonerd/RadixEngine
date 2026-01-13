@@ -36,7 +36,7 @@ void RadixTree::insertWorker(RadixNode* node, std::string_view word){
         
         childNode->m_prefix = label.substr(0, matchingLen);
         childNode->m_isWord = false;
-        childNode->m_nextNodes.emplace_back(splitNode->m_prefix[0], std::move(splitNode));
+        childNode->m_nextNodes.emplace_back(splitNode->m_prefix.at(0), std::move(splitNode));
         
         if(end.empty()){
           childNode->m_isWord = true;
@@ -45,7 +45,7 @@ void RadixTree::insertWorker(RadixNode* node, std::string_view word){
 
           newNode->m_prefix = end;
           newNode->m_isWord = true;
-          childNode->m_nextNodes.emplace_back(end[0], std::move(newNode));
+          childNode->m_nextNodes.emplace_back(end.at(0), std::move(newNode));
         }
       }
       
@@ -64,4 +64,38 @@ void RadixTree::insertWorker(RadixNode* node, std::string_view word){
 
 void RadixTree::insert(std::string_view word){
   insertWorker(m_root.get(), word);
+}
+
+auto RadixTree::containsWorker(const RadixNode* node, std::string_view word) const -> bool{
+  for(const auto& child : node->m_nextNodes){
+    if(child.first == word.at(0)){
+      RadixNode* childNode = child.second.get();
+      std::string_view label = childNode->m_prefix;
+
+       size_t matchingLen = 0;
+      while (matchingLen < word.length() && matchingLen < label.length() &&
+             word[matchingLen] == label[matchingLen]) {
+        matchingLen++;
+      }
+
+      if(matchingLen < label.length()){
+        return false;
+      }
+
+      std::string_view remainingWord = word.substr(matchingLen);
+
+      if(remainingWord.empty()){
+        return childNode->m_isWord;
+      }          
+
+      return containsWorker(childNode, remainingWord);
+     
+    }
+  }
+
+  return false;
+}
+
+auto RadixTree::contains(std::string_view word) const -> bool{
+  return containsWorker(m_root.get(), word);
 }

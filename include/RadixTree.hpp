@@ -17,8 +17,13 @@ class RadixTree{
   std::unique_ptr<RadixNode> m_root;
 
   void insertWorker(RadixNode* node, std::string_view word);
+
+  auto containsWorker(const RadixNode* node, std::string_view word) const -> bool;
 public:
   RadixTree();
 
   void insert(std::string_view word);
+
+  [[nodiscard]] auto contains(std::string_view word) const -> bool;
 };
+
