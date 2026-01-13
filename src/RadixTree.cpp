@@ -63,6 +63,10 @@ void RadixTree::insertWorker(RadixNode* node, std::string_view word){
 }
 
 void RadixTree::insert(std::string_view word){
+  if(word.empty()){
+    return;
+  }
+
   insertWorker(m_root.get(), word);
 }
 
@@ -98,4 +102,64 @@ auto RadixTree::containsWorker(const RadixNode* node, std::string_view word) con
 
 auto RadixTree::contains(std::string_view word) const -> bool{
   return containsWorker(m_root.get(), word);
+}
+
+void RadixTree::collectWords(const RadixNode* node, 
+                             const std::string& currentString, 
+                             std::vector<std::string>& results) const{
+  if(node->m_isWord){
+    results.push_back(currentString);
+  }
+
+  for(const auto& child : node->m_nextNodes){
+    collectWords(child.second.get(), currentString+child.second->m_prefix, results);
+  }
+}
+
+auto RadixTree::getPredictions(std::string_view prefix) 
+  const -> std::vector<std::string>{
+  std::vector<std::string> results;
+  const RadixNode* currentNode = m_root.get();
+
+  size_t currentLen = 0;
+
+  while(currentLen < prefix.length()){
+    bool foundNext = false;
+
+    for(const auto& child : currentNode->m_nextNodes){
+      if(child.first == prefix[currentLen]){
+        const RadixNode* childNode = child.second.get();
+        std::string_view label = childNode->m_prefix;
+
+        size_t matchingLen = 0;
+        while(matchingLen < label.length()&&
+              currentLen + matchingLen < prefix.length()&&
+              label[matchingLen] == prefix[currentLen+matchingLen]){
+          matchingLen++;
+        }
+
+        if(currentLen + matchingLen == prefix.length()){
+          std::string baseString = std::string(prefix);
+          baseString += label.substr(matchingLen);
+
+          collectWords(childNode, baseString, results);
+          return results;
+        }
+
+        if(matchingLen == label.length()){
+          currentNode = childNode;
+          currentLen += matchingLen;
+          foundNext = true;
+          break;
+        }
+
+        return results;
+      }
+    }
+
+    if(!foundNext) { return results; }
+  }
+
+  collectWords(currentNode, std::string(prefix), results);
+  return results;
 }
